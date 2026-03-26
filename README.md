@@ -1,4 +1,4 @@
-# Outlook Mail Reader — Shuffle SOAR App (Microsoft Graph, App-Only)
+# Outlook Mail Reader — Shuffle SOAR App 
 
 A configurable, generic Outlook / Exchange Online mailbox reader for [Shuffle SOAR](https://shuffler.io/) and similar automation workflows.
 
