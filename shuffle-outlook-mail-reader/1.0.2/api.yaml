@@ -1,6 +1,10 @@
-name: Outlook Graph AppOnly
-description: Microsoft Graph (Application credentials) - HR filtered messages (returns names)
-app_version: "1.1.0"
+name: Outlook Mail Reader (Graph App-Only)
+description: >
+  Read and filter messages from any Outlook / Exchange Online mailbox using
+  Microsoft Graph API with application (client credentials) permissions.
+  Supports configurable folder selection, subject/sender/unread/date filtering,
+  body keyword search, and optional regex-based extraction.
+app_version: "2.0.0"
 contact_info:
   name: "uldagalihan"
   url: "https://github.com/uldagalihan/outlook-graph-app-only"
@@ -10,119 +14,210 @@ categories:
   - Email
 authentication: {}
 actions:
-  - name: list_new_hire_messages
-    label: Extract names from New Hire emails
-    description: Get messages where subject equals "[Kurum Dışı] Şirkete Yeni Katılım - New Comer" and return extracted full names from body
-    parameters:
-      - name: tenant_id
-        required: true
-        variant: STATIC_VALUE
-        configuration: true
-        schema: { type: string }
-      - name: client_id
-        required: true
-        variant: STATIC_VALUE
-        configuration: true
-        schema: { type: string }
-      - name: client_secret
-        required: true
-        variant: STATIC_VALUE
-        configuration: true
-        schema: { type: string }
-      - name: mailbox
-        required: true
-        schema: { type: string }
-      - name: top
-        description: "How many messages to inspect (page size 1-1000)"
-        required: false
-        schema: { type: integer }
-    returns:
-      schema: { type: object }
-
-  - name: list_termination_messages
-    label: Extract names from Termination emails
+  - name: list_messages
+    label: List Messages
     description: >
-      Get messages where subject equals "[Kurum Dışı] Çalışan İlişik Kesme Bildirimi"
-      and return extracted full names and metadata from body. Optionally exclude
-      persons who continue working.
+      Retrieve messages from a mailbox folder with optional server-side and
+      client-side filters. Returns a structured list of messages including
+      sender, subject, received timestamp, read status, and plain-text body.
     parameters:
       - name: tenant_id
+        label: Tenant ID
+        description: "Azure AD tenant ID (GUID or domain, e.g. contoso.onmicrosoft.com)."
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: client_id
+        label: Client ID
+        description: "Application (client) ID of the Azure AD app registration."
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: client_secret
+        label: Client Secret
+        description: "Client secret for the Azure AD app registration."
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: mailbox
+        label: Mailbox
+        description: >
+          Target mailbox user principal name or object ID
+          (e.g. helpdesk@contoso.com).
         required: true
         schema: { type: string }
-      - name: top
-        description: "How many messages to inspect (page size 1-1000)"
+
+      - name: folder
+        label: Mail Folder
+        description: >
+          Folder to read from. Use a well-known name (inbox, sentitems,
+          deleteditems, drafts, junkemail, archive) or a custom folder
+          display name. Defaults to "inbox".
         required: false
-        schema: { type: integer }
-      - name: only_ready
-        description: "If true, only include records whose activate_at <= now (ready to be applied). Default: true"
+        schema:
+          type: string
+          default: "inbox"
+
+      - name: subject_filter
+        label: Subject Filter (exact match)
+        description: "Return only messages whose subject exactly matches this value."
+        required: false
+        schema: { type: string }
+
+      - name: sender_filter
+        label: Sender Filter (email address)
+        description: "Return only messages from this sender email address."
+        required: false
+        schema: { type: string }
+
+      - name: unread_only
+        label: Unread Only
+        description: "If true, return only unread messages."
         required: false
         schema:
           type: boolean
-          default: true
-      - name: exclude_persons
-        label: Persons to exclude (still employed)
+          default: false
+
+      - name: received_after
+        label: Received After (ISO 8601)
         description: >
-          Comma/semicolon/newline-separated list of users who should NOT be taken
-          from termination mails (e.g. 'alihan.uludag, emre.uludag'). These users
-          will be ignored in the output.
+          Return only messages received at or after this datetime
+          (e.g. 2024-01-01T00:00:00Z).
+        required: false
+        schema: { type: string }
+
+      - name: received_before
+        label: Received Before (ISO 8601)
+        description: >
+          Return only messages received before this datetime
+          (e.g. 2024-12-31T23:59:59Z).
+        required: false
+        schema: { type: string }
+
+      - name: body_keyword
+        label: Body Keyword
+        description: >
+          Return only messages whose plain-text body contains this keyword
+          (case-insensitive, applied after fetch).
+        required: false
+        schema: { type: string }
+
+      - name: top
+        label: Max Messages
+        description: "Maximum number of messages to retrieve (1–1000). Defaults to 25."
         required: false
         schema:
-          type: string
-    returns:
-      schema: { type: object }
+          type: integer
+          default: 25
 
-  - name: list_ready_termination_names
-    label: Extract READY termination names (for QRadar)
+    returns:
+      schema:
+        type: object
+
+  - name: get_message
+    label: Get Message
     description: >
-      Same as 'list_termination_messages' but returns only the names that are ready
-      (activate_at <= now) and not in the excluded Person list. Ideal for QRadar
-      Reference Set loader.
+      Fetch a single message by its Graph message ID. Returns full message
+      details including the plain-text body.
     parameters:
       - name: tenant_id
+        label: Tenant ID
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: client_id
+        label: Client ID
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: client_secret
+        label: Client Secret
         required: true
         variant: STATIC_VALUE
         configuration: true
         schema: { type: string }
+
       - name: mailbox
+        label: Mailbox
         required: true
         schema: { type: string }
-      - name: top
-        description: "How many messages to inspect (page size 1-1000)"
-        required: false
-        schema: { type: integer }
-      - name: exclude_persons
-        label: Persons to exclude (still employed)
+
+      - name: message_id
+        label: Message ID
+        description: "The Graph message ID returned by the list_messages action."
+        required: true
+        schema: { type: string }
+
+    returns:
+      schema:
+        type: object
+
+  - name: extract_with_regex
+    label: Extract with Regex
+    description: >
+      Fetch a message and apply a user-supplied regular expression pattern to
+      its plain-text body. Returns all matches as a list. This is an optional,
+      modular extraction step; use it when you need to parse structured data
+      from email bodies (e.g. ticket IDs, IP addresses, order numbers).
+    parameters:
+      - name: tenant_id
+        label: Tenant ID
+        required: true
+        variant: STATIC_VALUE
+        configuration: true
+        schema: { type: string }
+
+      - name: client_id
+        label: Client ID
+        required: true
+        variant: STATIC_VALUE
+        configuration: true
+        schema: { type: string }
+
+      - name: client_secret
+        label: Client Secret
+        required: true
+        variant: STATIC_VALUE
+        configuration: true
+        schema: { type: string }
+
+      - name: mailbox
+        label: Mailbox
+        required: true
+        schema: { type: string }
+
+      - name: message_id
+        label: Message ID
+        description: "The Graph message ID of the message to process."
+        required: true
+        schema: { type: string }
+
+      - name: pattern
+        label: Regex Pattern
         description: >
-          Comma/semicolon/newline-separated list of users who should NOT be taken
-          from termination mails (e.g. 'alihan.uludag, emre.uludag').
+          Python-compatible regular expression pattern to apply to the message
+          body (e.g. '\b\d{3,}\b' to find numeric IDs).
+        required: true
+        schema: { type: string }
+
+      - name: flags
+        label: Regex Flags
+        description: >
+          Optional combination of flag characters: i (IGNORECASE), m (MULTILINE),
+          s (DOTALL). Example: "im" applies IGNORECASE and MULTILINE.
         required: false
-        schema:
-          type: string
+        schema: { type: string }
+
     returns:
       schema:
         type: object

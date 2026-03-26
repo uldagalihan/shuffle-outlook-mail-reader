@@ -1,3 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
 
-# backup yaml
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+*.secret
+
+# Docker
+.dockerignore
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Backup YAML files (Shuffle editor artefacts)
 *.bak-*
+
+# Logs
+*.log
